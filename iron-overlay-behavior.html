@@ -167,7 +167,21 @@ context. You should place this element as a child of `<body>` whenever possible.
       return this._focusedChild || Polymer.dom(this).querySelector('[autofocus]') || this;
     },
 
+    /**
+     * The deepest active element.
+     * @type Node
+     */
+    get _deepestActiveElement() {
+      var active = Polymer.dom(document).activeElement;
+      while (active.root && Polymer.dom(active.root).activeElement) {
+        active = Polymer.dom(active.root).activeElement;
+      }
+      return active;
+    },
+
     ready: function() {
+      // used to keep track of the last focused node before focus is moved to this overlay.
+      this.__lastFocusedNode = null;
       // with-backdrop need tabindex to be set in order to trap the focus.
       // If it is not set, IronOverlayBehavior will set it, and remove it if with-backdrop = false.
       this.__shouldRemoveTabIndex = false;
@@ -176,7 +190,7 @@ context. You should place this element as a child of `<body>` whenever possible.
 
     attached: function() {
       // Call _openedChanged here so that position can be computed correctly.
-      if (this._callOpenedWhenReady) {
+      if (this.opened) {
         this._openedChanged();
       }
     },
@@ -243,7 +257,6 @@ context. You should place this element as a child of `<body>` whenever possible.
 
       // wait to call after ready only if we're initially open
       if (!this._overlaySetup) {
-        this._callOpenedWhenReady = this.opened;
         return;
       }
 
@@ -391,10 +404,22 @@ context. You should place this element as a child of `<body>` whenever possible.
     _applyFocus: function() {
       if (this.opened) {
         if (!this.noAutoFocus) {
+          var activeElement = this._deepestActiveElement;
+          // Store only if not contained in another overlay.
+          if (!this._manager.overlayParent(activeElement)) {
+            this.__lastFocusedNode = activeElement;
+          }
           this._focusNode.focus();
         }
       } else {
-        this._focusNode.blur();
+        // Move the focus to the last focused node, so that the next overlay will save it
+        // (manager will call its _applyFocus).
+        if (this.__lastFocusedNode) {
+          this.__lastFocusedNode.focus();
+          this.__lastFocusedNode = null;
+        } else {
+          this._focusNode.blur();
+        }
         this._manager.focusOverlay();
       }
     },

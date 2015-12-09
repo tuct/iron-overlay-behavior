@@ -23,6 +23,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <link rel="import" href="../../iron-test-helpers/iron-test-helpers.html">
     <link rel="import" href="test-overlay.html">
     <link rel="import" href="test-overlay2.html">
+    <link rel="import" href="test-focusables.html">
 
   </head>
   <body>
@@ -49,6 +50,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           Autofocus
           <button autofocus>button</button>
         </test-overlay>
+      </template>
+    </test-fixture>
+
+    <test-fixture id="focusables">
+      <template>
+        <test-focusables></test-focusables>
       </template>
     </test-fixture>
 
@@ -98,6 +105,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           Polymer.Base.async(cb, 1);
         });
         overlay.open();
+      }
+
+      function runAfterClose(overlay, callback) {
+        overlay.addEventListener('iron-overlay-closed', callback);
+        overlay.close();
+      }
+
+      function deepestActiveElement() {
+        var active = Polymer.dom(document).activeElement;
+        while (active.root && Polymer.dom(active.root).activeElement) {
+          active = Polymer.dom(active.root).activeElement;
+        }
+        return active;
       }
 
       suite('basic overlay tests', function() {
@@ -292,9 +312,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             overlay.addEventListener('iron-overlay-canceled', function(event) {
               done();
             });
-            fireEvent('keydown', {
-              keyCode: 27
-            }, document);
+            MockInteractions.pressAndReleaseKeyOn(document, 27);
           });
         });
 
@@ -304,9 +322,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
               assert.isTrue(event.detail.canceled, 'overlay is canceled');
               done();
             });
-            fireEvent('keydown', {
-              keyCode: 27
-            }, document);
+            MockInteractions.pressAndReleaseKeyOn(document, 27);
           });
         });
 
@@ -341,9 +357,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           runAfterOpen(overlay, function() {
             var spy = sinon.stub();
             overlay.addEventListener('iron-overlay-closed', spy);
-            fireEvent('keydown', {
-              keyCode: 27
-            }, document);
+            MockInteractions.pressAndReleaseKeyOn(document, 27);
             setTimeout(function() {
               assert.isFalse(spy.called, 'iron-overlay-cancel should not fire');
               done();
@@ -631,7 +645,64 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           assert.equal(overlay.getAttribute('aria-hidden'), 'true', 'overlay has aria-hidden="true"');
         });
 
-      })
+      });
+
+      suite('restore focus', function() {
+
+        test('return focus on close', function(done) {
+          var overlay = fixture('autofocus');
+          var focusable = document.createElement('input');
+          document.body.appendChild(focusable);
+          forceFocus(focusable);
+
+          runAfterOpen(overlay, function() {
+            assert.isTrue(deepestActiveElement() === Polymer.dom(overlay).querySelector('[autofocus]'), 'focus changed to [autofocus]');
+            runAfterClose(overlay, function() {
+              assert.isTrue(deepestActiveElement() === focusable, 'focus restored to focusable');
+              focusable.parentNode.removeChild(focusable);
+              done();
+            });
+          });
+        });
+
+        test('return focus on close (ShadowDOM)', function(done) {
+          var overlay = fixture('autofocus');
+          var focusable = fixture('focusables').$.focusable0;
+          forceFocus(focusable);
+          runAfterOpen(overlay, function() {
+            assert.isTrue(deepestActiveElement() === Polymer.dom(overlay).querySelector('[autofocus]'), 'focus changed to [autofocus]');
+            runAfterClose(overlay, function() {
+              assert.isTrue(deepestActiveElement() === focusable, 'focus restored to focusable');
+              done();
+            });
+          });
+        });
+
+        test('do not return focus to elements contained in another overlay', function(done) {
+          var overlay = fixture('autofocus');
+          var otherOverlay = fixture('basic');
+          var focusable = document.createElement('input');
+          runAfterOpen(otherOverlay,function () {
+            otherOverlay.appendChild(focusable);
+            forceFocus(focusable);
+            runAfterOpen(overlay, function() {
+              assert.isTrue(deepestActiveElement() === Polymer.dom(overlay).querySelector('[autofocus]'), 'focus changed to [autofocus]');
+              runAfterClose(overlay, function() {
+                assert.isFalse(deepestActiveElement() === focusable, 'focus not restored to focusable inside otherOverlay');
+                focusable.parentNode.removeChild(focusable);
+                done();
+              });
+            });
+          });
+        });
+
+      });
+
+      function forceFocus(node) {
+        MockInteractions.focus(node);
+        node.focus();
+        assert.isTrue(deepestActiveElement() === node, 'node ' + node.nodeName + ' is focused');
+      }
 
     </script>
 

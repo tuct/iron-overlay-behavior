@@ -10,7 +10,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="../../polymer/polymer.html">
 
-<dom-module id="test-buttons">
+<dom-module id="test-focusables">
 
   <style>
 
@@ -22,9 +22,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   </style>
 
   <template>
-    <button id="button0">button0</button>
-    <button id="button1">button1</button>
-    <button id="button2">button2</button>
+    <input id="focusable0">
+    <input id="focusable1">
   </template>
 
 </dom-module>
@@ -33,7 +32,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 (function() {
   Polymer({
-    is: 'test-buttons'
+    is: 'test-focusables'
   });
 })();
 

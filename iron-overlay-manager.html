@@ -26,7 +26,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     this._minimumZ = 101;
 
     this._backdrops = [];
-  }
+  };
+
+  /**
+   * Checks if the node is an overlay or if is contained in an overlay.
+   * @param {HTMLNode} node
+   * @returns {overlay: HTMLNode|undefined} the overlay
+   */
+  Polymer.IronOverlayManagerClass.prototype.overlayParent = function(node) {
+    var parent = node;
+    while (parent && parent !== document.body) {
+      if (parent.behaviors && parent.behaviors.indexOf(Polymer.IronOverlayBehaviorImpl) !== -1) {
+        return parent;
+      }
+      parent = Polymer.dom(parent).parentNode;
+    }
+  };
 
   Polymer.IronOverlayManagerClass.prototype._applyOverlayZ = function(overlay, aboveZ) {
     this._setZ(overlay, aboveZ + 2);
@@ -107,7 +122,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     }
   };
 
-  Object.defineProperty(Polymer.IronOverlayManagerClass.prototype, "backdropElement", {
+  Object.defineProperty(Polymer.IronOverlayManagerClass.prototype, 'backdropElement', {
     get: function() {
       if (!this._backdropElement) {
         this._backdropElement = document.createElement('iron-overlay-backdrop');
