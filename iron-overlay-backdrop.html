@@ -90,13 +90,16 @@ Custom property | Description | Default
     },
 
     /**
-     * Appends the backdrop to document body and sets its `z-index` to be below the latest overlay.
+     * Moves the backdrop before sibling and sets its `z-index` to be below the latest overlay.
      */
     prepare: function() {
       // Always update z-index
       this.style.zIndex = this._manager.backdropZ();
-      if (!this.parentNode) {
-        Polymer.dom(document.body).appendChild(this);
+      var backdrops = this._manager.getBackdrops();
+      var sibling = backdrops[backdrops.length - 1];
+      var parent = sibling ? Polymer.dom(sibling).parentNode : null;
+      if (parent && this.parentNode !== parent) {
+        Polymer.dom(parent).insertBefore(this, sibling);
       }
     },
 
@@ -104,8 +107,7 @@ Custom property | Description | Default
      * Shows the backdrop if needed.
      */
     open: function() {
-      // only need to make the backdrop visible if this is called by the first overlay with a backdrop
-      if (this._manager.getBackdrops().length < 2) {
+      if (this._manager.getBackdrops().length) {
         this._setOpened(true);
       }
     },
@@ -114,14 +116,14 @@ Custom property | Description | Default
      * Hides the backdrop if needed.
      */
     close: function() {
-      // Always update z-index
-      this.style.zIndex = this._manager.backdropZ();
-      // only need to make the backdrop invisible if this is called by the last overlay with a backdrop
-      if (this._manager.getBackdrops().length < 2) {
+      if (this._manager.getBackdrops().length === 0) {
         this._setOpened(false);
         // complete() will be called after the transition is done.
         // If animations are disabled via custom-styles, user is expected to call
         // complete() after close()
+      } else {
+        // move backdrop to new overlay on top
+        this.prepare();
       }
     },
 
