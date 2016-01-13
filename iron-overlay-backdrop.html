@@ -33,11 +33,7 @@ Custom property | Description | Default
 
     :host {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: var(--iron-overlay-backdrop-background-color, #000);
+      outline: 9999px solid var(--iron-overlay-backdrop-background-color, #000);
       opacity: 0;
       transition: opacity 0.2s;
 
@@ -48,6 +44,15 @@ Custom property | Description | Default
       opacity: var(--iron-overlay-backdrop-opacity, 0.6);
 
       @apply(--iron-overlay-backdrop-opened);
+    }
+
+    :host([opened]::before) {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
     }
 
   </style>
@@ -94,7 +99,8 @@ Custom property | Description | Default
      */
     prepare: function() {
       // Always update z-index
-      this.style.zIndex = this._manager.backdropZ();
+      this.style.zIndex = this._manager.currentOverlayZ() - 1;
+      this.style.top = this.style.left = this.style.width = this.style.height = '';
       if (!this.parentNode) {
         Polymer.dom(document.body).appendChild(this);
       }
@@ -115,13 +121,25 @@ Custom property | Description | Default
      */
     close: function() {
       // Always update z-index
-      this.style.zIndex = this._manager.backdropZ();
+      this.style.zIndex = this._manager.currentOverlayZ() - 1;
       // only need to make the backdrop invisible if this is called by the last overlay with a backdrop
       if (this._manager.getBackdrops().length < 2) {
         this._setOpened(false);
         // complete() will be called after the transition is done.
         // If animations are disabled via custom-styles, user is expected to call
         // complete() after close()
+      }
+    },
+
+    refit: function () {
+      var backdrops = this._manager.getBackdrops();
+      var target = backdrops[backdrops.length - 1];
+      if (target) {
+        var bounds = target.getBoundingClientRect();
+        this.style.left = bounds.left + 'px';
+        this.style.top = bounds.top + 'px';
+        this.style.width = bounds.width + 'px';
+        this.style.height = bounds.height + 'px';
       }
     },
 

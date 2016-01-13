@@ -240,6 +240,8 @@ context. You should place this element as a child of `<body>` whenever possible.
 
       this._toggleListeners();
 
+      this._manager.trackBackdrop(this);
+
       if (this.opened) {
         this._prepareRenderOpened();
       }
@@ -279,6 +281,7 @@ context. You should place this element as a child of `<body>` whenever possible.
           this.backdropElement.close();
           this._manager.trackBackdrop(this);
         }
+        this.backdropElement.refit();
       }
     },
 
@@ -318,7 +321,6 @@ context. You should place this element as a child of `<body>` whenever possible.
       this.fit();
       this._finishPositioning();
 
-      this._manager.trackBackdrop(this);
       if (this.withBackdrop) {
         this.backdropElement.prepare();
       }
@@ -354,7 +356,6 @@ context. You should place this element as a child of `<body>` whenever possible.
       // hide the overlay and remove the backdrop
       this.resetFit();
       this.style.display = 'none';
-      this._manager.trackBackdrop(this);
       this._manager.removeOverlay(this);
 
       this._focusNode.blur();
@@ -410,6 +411,9 @@ context. You should place this element as a child of `<body>` whenever possible.
     _onIronResize: function() {
       if (this.opened) {
         this.refit();
+        if (this.withBackdrop) {
+          this.backdropElement.refit();
+        }
       }
     }
 
