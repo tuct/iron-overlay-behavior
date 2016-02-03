@@ -93,10 +93,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     <script>
 
-      function runAfterOpen(overlay, cb) {
-        overlay.addEventListener('iron-overlay-opened', function() {
-          Polymer.Base.async(cb, 1);
-        });
+      function runAfterOpen(overlay, callback) {
+        overlay.addEventListener('iron-overlay-opened', callback);
         overlay.open();
       }
 
@@ -117,6 +115,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           overlay.addEventListener('iron-overlay-opened', function() {
             assert.isTrue(overlay.opened, 'overlay starts opened');
             assert.notEqual(getComputedStyle(overlay).display, 'none', 'overlay starts showing');
+            done();
+          });
+        });
+
+        test('iron-overlay-opened is called after iron-resize', function(done) {
+          overlay = fixture('basic');
+          var resizeSpy = sinon.stub();
+          var openedSpy = sinon.stub();
+          overlay.addEventListener('iron-resize', resizeSpy);
+          overlay.addEventListener('iron-overlay-opened', openedSpy);
+          runAfterOpen(overlay, function() {
+            assert.isTrue(openedSpy.calledAfter(resizeSpy), 'iron-resize then iron-overlay-opened');
             done();
           });
         });
@@ -148,17 +158,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           overlay.opened = true;
         });
 
-        test('open overlay refits on iron-resize', function() {
+        test('open overlay refits on iron-resize', function(done) {
           var overlay = fixture('opened');
           var spy = sinon.spy(overlay, 'refit');
           overlay.fire('iron-resize');
-          assert.isTrue(spy.called, 'overlay should refit');
+          setTimeout(function () {
+            assert.isTrue(spy.called, 'overlay should refit');
+            done();
+          }, 100);
         });
 
-        test('closed overlay does not refit on iron-resize', function() {
+        test('closed overlay does not refit on iron-resize', function(done) {
           var spy = sinon.spy(overlay, 'refit');
           overlay.fire('iron-resize');
-          assert.isFalse(spy.called, 'overlay should not refit');
+          setTimeout(function () {
+            assert.isFalse(spy.called, 'overlay should not refit');
+            done();
+          }, 100);
         });
 
         test('open() triggers iron-resize', function(done) {
